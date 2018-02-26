@@ -1,0 +1,41 @@
+---
+
+- hosts: all
+  gather_facts: true
+
+  vars:
+    echo_debug: true
+
+  tasks:
+
+  - name: Update RedHat Servers
+    block:
+
+    - yum:
+        name: '*'
+        state: latest
+      become: true
+      register: result
+
+    - debug:
+        var: result
+      when: echo_debug
+
+    when: ansible_os_family == 'RedHat'
+
+  - name: Update Debian Servers
+    block:
+
+    - apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 3600
+      become: true
+      register: result
+
+    - debug:
+        var: result
+      when: echo_debug
+
+    when: ansible_os_family == 'Debian'
+

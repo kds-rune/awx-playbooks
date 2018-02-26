@@ -1,0 +1,25 @@
+---
+
+- name: windows | broadcast message
+  hosts: all
+  become: false
+  gather_facts: false
+
+  vars:
+    message_receivers: '*'
+    message_text: 'Message from awx; nothing to worry about!'
+    show_result: false
+
+  tasks:
+
+  - win_msg:
+      msg: "{{ message_text }}"
+      to: "{{ message_receivers }}"
+      wait: no
+      display_seconds: 60
+    register: msg_result
+
+  - block:
+    - debug:
+        var: msg_result
+    when: show_result

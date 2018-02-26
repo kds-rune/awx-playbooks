@@ -1,0 +1,22 @@
+---
+
+- name: windows | check service status
+  hosts: all
+  become: false
+  gather_facts: false
+
+  vars:
+    service_name: []
+
+  tasks:
+
+  - block: check service status
+
+    - win_service:
+        name: "{{ service_name }}"
+      register: service_info
+
+    - debug:
+        var: service_info
+
+    when: service_name[0] is defined

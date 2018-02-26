@@ -1,0 +1,115 @@
+---
+####
+##
+##  Generic template for updating windows machines
+##
+##  Parameters you can customize when running:
+##
+##    wu_categories: dictionary
+##    > update categories to check and/or install
+##
+##    wu_install_updates: true | [false]
+##    > if you want to install updates that are found
+##
+##    wu_reboot_allowed: true | [false]
+##    > if you want the machine to reboot if required
+##
+##    wu_reboot_message: string
+##    > message to send users before reboot
+##
+##    wu_install_message: string
+##    > message to send users before installation starts
+##
+##    wu_print_info: [true] | false
+##    > if you want to print debug-messages (update status)
+##
+####
+- name: windows | update
+  hosts: all
+  gather_facts: false
+  become: false
+
+  vars:
+
+    wu_categories:
+    - SecurityUpdates
+    - DefinitionUpdates
+    - UpdateRollups
+
+    wu_install_updates: true
+    wu_reboot_allowed: true
+
+    wu_install_message: "Automated upgrade starting.. Please save your work and log off"
+    wu_reboot_message: "This server will reboot in 5 minutes. Please save your work and log off"
+
+    wu_print_info: false
+    
+  tasks:
+
+  - name: pre-update checks
+    block:
+
+    - name: pre-update | check update status
+      win_updates:
+        category_names: "{{ wu_categories }}"
+        state: searched
+        log_path: c:/ansible_wu.txt
+      register: wu_result_pre
+      ignore_errors: yes
+
+    - fail:
+      when: wu_result_pre is not defined
+
+    - name: pre-update | list update status
+      debug:
+        var: wu_result_pre
+      when: wu_print_info
+
+    - name: pre-update | reboot server
+      win_reboot:
+        msg: "{{ wu_reboot_message }}"
+        pre_reboot_delay: 60
+        post_reboot_delay: 30
+        shutdown_timeout: 3600
+        reboot_timeout: 3600
+      when:
+      - wu_result_pre.reboot_required
+      - wu_reboot_allowed
+
+  - name: install updates
+    block:
+
+    - win_msg:
+        display_seconds: 60
+        msg: "{{ wu_install_message }}"
+
+    - name: update | install
+      win_updates:
+        category_names: "{{ wu_categories }}"
+        state: installed
+        log_path: c:/ansible_wu.txt
+      register: wu_result
+      ignore_errors: yes
+
+    - fail:
+      when: wu_result is not defined
+
+    - name: post-update | list update result
+      debug:
+        var: wu_result
+      when: wu_print_info
+
+    - name: post-update | reboot server
+      win_reboot:
+        msg: "{{ wu_reboot_message }}"
+        pre_reboot_delay: 300
+        post_reboot_delay: 60
+        shutdown_timeout: 3600
+        reboot_timeout: 3600
+      when:
+      - wu_result.reboot_required or (wu_result.failed_update_count > 0)
+      - wu_reboot_allowed
+
+    when:
+    - wu_install_updates
+    - wu_result_pre.found_update_count > 0

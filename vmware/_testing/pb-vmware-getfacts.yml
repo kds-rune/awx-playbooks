@@ -1,0 +1,28 @@
+---
+
+- hosts: localhost
+  become: false
+  gather_facts: false
+
+  vars:
+    vmware_username: 'user'
+    vmware_password: 'password'
+    vmware_hostname: vcenter.kred.no
+    vmware_datacenter: ha-datacenter
+    vmware_guest_name: 'guest'
+    vmware_folder: '/vm'
+
+  tasks:
+
+  - name: vmware | check guest facts
+    vmware_guest_facts:
+      hostname: "{{ vmware_hostname }}"
+      username: "{{ vmware_username }}"
+      password: "{{ vmware_password }}"
+      datacenter: "{{ vmware_datacenter }}"
+      validate_certs: false
+      name: "{{ vmware_guest_name }}"
+    register: vmware_facts
+
+  - debug:
+      var: vmware_facts

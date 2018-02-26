@@ -1,0 +1,22 @@
+---
+
+- hosts: all
+  gather_facts: false
+  become: false
+
+  tasks:
+
+  - name: Check Connection | Ping
+    block:
+    - win_ping:
+
+  - name: Check Service | Windows Time
+    block:
+    - win_service:
+        name: w32time
+      register: status_w32time
+
+    - fail:
+        msg: "Windows Time service is not running"
+      when: status_w32time['state'] != 'running'
+

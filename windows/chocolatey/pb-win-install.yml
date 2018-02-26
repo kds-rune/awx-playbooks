@@ -1,0 +1,33 @@
+---
+
+- name: software installation | chocolatey
+  hosts: all
+  gather_facts: false
+
+  vars:
+    packages_install: []
+    packages_install_admin: []
+
+  tasks:
+
+  - block:
+
+    - win_chocolatey:
+        name: "{{ item['name'] }}"
+        state: "{{ item['state'] | default('present') }}"
+      with_items: "{{ packages_install }}"
+      ignore_errors: yes
+
+    when: packages_install[0] is defined
+
+  - block:
+
+    - win_chocolatey:
+        name: "{{ item['name'] }}"
+        state: "{{ item['state'] | default('present') }}"
+      become: true
+      become_method: runas
+      with_items: "{{ packages_install_admin }}"
+      ignore_errors: yes
+
+    when: packages_install_admin[0] is defined
